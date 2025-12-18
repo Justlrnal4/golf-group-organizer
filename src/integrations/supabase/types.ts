@@ -85,6 +85,57 @@ export type Database = {
           },
         ]
       }
+      preferences: {
+        Row: {
+          availability: Json
+          budget: string
+          created_at: string
+          holes_preference: string
+          id: string
+          max_drive_minutes: number
+          outing_id: string
+          participant_id: string
+          updated_at: string
+        }
+        Insert: {
+          availability?: Json
+          budget?: string
+          created_at?: string
+          holes_preference?: string
+          id?: string
+          max_drive_minutes?: number
+          outing_id: string
+          participant_id: string
+          updated_at?: string
+        }
+        Update: {
+          availability?: Json
+          budget?: string
+          created_at?: string
+          holes_preference?: string
+          id?: string
+          max_drive_minutes?: number
+          outing_id?: string
+          participant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preferences_outing_id_fkey"
+            columns: ["outing_id"]
+            isOneToOne: false
+            referencedRelation: "outings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preferences_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: true
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
