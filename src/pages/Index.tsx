@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Flag, CalendarIcon, MapPin, Clock, User, ArrowRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Flag, CalendarIcon, MapPin, Clock, User, ArrowRight, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,12 @@ import {
 import { PageContainer } from "@/components/layout/PageContainer";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const [title, setTitle] = useState("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [zipCode, setZipCode] = useState("");
@@ -24,28 +28,74 @@ const Index = () => {
   const [deadlineTime, setDeadlineTime] = useState("18:00");
   const [organizerName, setOrganizerName] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const formData = {
-      title: title || "Saturday Golf",
-      dateRange: {
-        from: dateRange?.from,
-        to: dateRange?.to,
-      },
-      zipCode,
-      deadline: deadline ? new Date(
+    // Validation
+    if (!dateRange?.from || !dateRange?.to) {
+      toast.error("Please select a date range");
+      return;
+    }
+    if (!zipCode || zipCode.length < 5) {
+      toast.error("Please enter a valid zip code");
+      return;
+    }
+    if (!deadline) {
+      toast.error("Please select a response deadline");
+      return;
+    }
+    if (!organizerName.trim()) {
+      toast.error("Please enter your name");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Create deadline with time
+      const deadlineDateTime = new Date(
         deadline.getFullYear(),
         deadline.getMonth(),
         deadline.getDate(),
         parseInt(deadlineTime.split(":")[0]),
         parseInt(deadlineTime.split(":")[1])
-      ) : null,
-      organizerName,
-    };
+      );
 
-    console.log("Form Data:", formData);
-    toast.success("Outing created! Check console for data.");
+      // Insert outing
+      const { data: outing, error: outingError } = await supabase
+        .from("outings")
+        .insert({
+          title: title.trim() || "Saturday Golf",
+          date_range_start: format(dateRange.from, "yyyy-MM-dd"),
+          date_range_end: format(dateRange.to, "yyyy-MM-dd"),
+          location_zip: zipCode,
+          deadline: deadlineDateTime.toISOString(),
+          status: "open",
+        })
+        .select()
+        .single();
+
+      if (outingError) throw outingError;
+
+      // Insert organizer as participant
+      const { error: participantError } = await supabase
+        .from("participants")
+        .insert({
+          outing_id: outing.id,
+          name: organizerName.trim(),
+          is_organizer: true,
+        });
+
+      if (participantError) throw participantError;
+
+      toast.success("Outing created!");
+      navigate(`/outing/${outing.id}`);
+    } catch (error) {
+      console.error("Error creating outing:", error);
+      toast.error("Failed to create outing. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -87,6 +137,7 @@ const Index = () => {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="h-12"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -106,6 +157,7 @@ const Index = () => {
                       "w-full h-12 justify-start text-left font-normal",
                       !dateRange && "text-muted-foreground"
                     )}
+                    disabled={isSubmitting}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {dateRange?.from ? (
@@ -152,6 +204,7 @@ const Index = () => {
                   onChange={(e) => setZipCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
                   className="h-12 pl-10"
                   maxLength={5}
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
@@ -173,6 +226,7 @@ const Index = () => {
                         "flex-1 h-12 justify-start text-left font-normal",
                         !deadline && "text-muted-foreground"
                       )}
+                      disabled={isSubmitting}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {deadline ? format(deadline, "MMM d, yyyy") : <span>Select date</span>}
@@ -195,6 +249,7 @@ const Index = () => {
                     value={deadlineTime}
                     onChange={(e) => setDeadlineTime(e.target.value)}
                     className="h-12 pl-10 w-[120px]"
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
@@ -214,6 +269,7 @@ const Index = () => {
                   value={organizerName}
                   onChange={(e) => setOrganizerName(e.target.value)}
                   className="h-12 pl-10"
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
@@ -225,9 +281,19 @@ const Index = () => {
             variant="hero" 
             size="lg" 
             className="w-full mt-8"
+            disabled={isSubmitting}
           >
-            Create Outing
-            <ArrowRight className="h-5 w-5" />
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              <>
+                Create Outing
+                <ArrowRight className="h-5 w-5" />
+              </>
+            )}
           </Button>
         </div>
       </form>
