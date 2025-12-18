@@ -14,7 +14,77 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      outings: {
+        Row: {
+          created_at: string
+          date_range_end: string
+          date_range_start: string
+          deadline: string
+          id: string
+          location_zip: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_range_end: string
+          date_range_start: string
+          deadline: string
+          id?: string
+          location_zip: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_range_end?: string
+          date_range_start?: string
+          deadline?: string
+          id?: string
+          location_zip?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      participants: {
+        Row: {
+          available_dates: string[] | null
+          created_at: string
+          id: string
+          is_organizer: boolean
+          name: string
+          outing_id: string
+        }
+        Insert: {
+          available_dates?: string[] | null
+          created_at?: string
+          id?: string
+          is_organizer?: boolean
+          name: string
+          outing_id: string
+        }
+        Update: {
+          available_dates?: string[] | null
+          created_at?: string
+          id?: string
+          is_organizer?: boolean
+          name?: string
+          outing_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participants_outing_id_fkey"
+            columns: ["outing_id"]
+            isOneToOne: false
+            referencedRelation: "outings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
