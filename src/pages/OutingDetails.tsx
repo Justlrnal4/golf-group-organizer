@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Copy, Users, Calendar, Share2, Loader2, Clock, DollarSign, Car, Target, Sparkles, RefreshCw, ExternalLink, ClipboardList } from "lucide-react";
+import { Copy, Users, Calendar, Share2, Loader2, Clock, DollarSign, Car, Target, Sparkles, RefreshCw, ExternalLink, ClipboardList, Phone } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -486,6 +486,7 @@ const OutingDetails = () => {
             <div className="space-y-2">
               {participants.map((participant) => {
                 const hasPref = preferences.some((p) => p.participant_id === participant.id);
+                const phone = (participant as { phone?: string }).phone;
                 return (
                   <div
                     key={participant.id}
@@ -496,13 +497,24 @@ const OutingDetails = () => {
                         {participant.name[0]?.toUpperCase()}
                       </div>
                       <div>
-                        <span className="text-sm font-medium text-foreground">
-                          {participant.name}
-                        </span>
-                        {participant.is_organizer && (
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            (Organizer)
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-foreground">
+                            {participant.name}
                           </span>
+                          {participant.is_organizer && (
+                            <span className="text-xs text-muted-foreground">
+                              (Organizer)
+                            </span>
+                          )}
+                        </div>
+                        {phone && (
+                          <a 
+                            href={`tel:${phone}`} 
+                            className="flex items-center gap-1 text-xs text-primary hover:underline"
+                          >
+                            <Phone className="h-3 w-3" />
+                            {phone}
+                          </a>
                         )}
                       </div>
                     </div>
