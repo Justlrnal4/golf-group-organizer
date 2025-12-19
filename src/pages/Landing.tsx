@@ -62,43 +62,76 @@ const Landing = () => {
         </p>
 
         {/* Golf Animation Area */}
-        <div className="relative h-32 mb-10 flex items-end justify-center">
+        <div className="relative h-40 mb-10 flex items-end justify-center">
+          {/* Ground/Grass line */}
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent rounded-full" />
+          
           {/* Tee */}
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-4 bg-amber-200 rounded-t-sm" />
+          <div className="absolute bottom-1 left-1/2 translate-x-2 w-1.5 h-5 bg-gradient-to-b from-amber-100 to-amber-300 rounded-t-full" />
           
           {/* Golf Ball */}
           {showBall && (
             <div 
               className={cn(
-                "absolute bottom-4 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-white shadow-lg border border-gray-200 transition-all duration-500",
+                "absolute bottom-6 left-1/2 translate-x-1 w-6 h-6 rounded-full bg-gradient-to-br from-white to-gray-100 shadow-lg border border-gray-200 transition-all duration-500",
                 ballFlying && "animate-ball-fly opacity-0"
               )}
             >
-              {/* Ball dimples */}
-              <div className="absolute inset-1 rounded-full border border-gray-100" />
+              {/* Ball dimples pattern */}
+              <div className="absolute inset-0.5 rounded-full opacity-30">
+                <div className="absolute top-1 left-1 w-1 h-1 rounded-full bg-gray-300" />
+                <div className="absolute top-1 right-2 w-1 h-1 rounded-full bg-gray-300" />
+                <div className="absolute top-2.5 left-2 w-1 h-1 rounded-full bg-gray-300" />
+                <div className="absolute bottom-1.5 left-1.5 w-1 h-1 rounded-full bg-gray-300" />
+                <div className="absolute bottom-1 right-1 w-1 h-1 rounded-full bg-gray-300" />
+              </div>
             </div>
           )}
 
-          {/* Golf Club */}
+          {/* Golf Driver */}
           <div 
             className={cn(
-              "absolute bottom-0 left-1/2 origin-bottom transition-transform duration-300 ease-out",
-              isSwinging ? "rotate-[80deg] translate-x-8" : "-rotate-45 -translate-x-16"
+              "absolute bottom-1 left-1/2 origin-bottom transition-transform duration-300 ease-out",
+              isSwinging ? "rotate-[85deg] translate-x-6" : "-rotate-[50deg] -translate-x-14"
             )}
             style={{ transformOrigin: "50% 100%" }}
           >
             {/* Club shaft */}
-            <div className="w-1.5 h-28 bg-gradient-to-b from-gray-600 to-gray-400 rounded-t-sm" />
-            {/* Club head */}
-            <div className="absolute -bottom-1 -right-4 w-8 h-4 bg-gradient-to-r from-gray-700 to-gray-500 rounded-sm transform -rotate-12 shadow-md" />
+            <div className="relative w-1 h-32">
+              <div className="absolute inset-0 bg-gradient-to-b from-gray-300 via-gray-400 to-gray-500 rounded-full" />
+              {/* Shaft shine */}
+              <div className="absolute top-0 left-0 w-0.5 h-full bg-gradient-to-b from-white/40 to-transparent rounded-full" />
+            </div>
+            
             {/* Club grip */}
-            <div className="absolute -top-1 left-0 w-1.5 h-8 bg-gray-800 rounded-t-md" />
+            <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-10 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-700 rounded-t-lg">
+              {/* Grip texture lines */}
+              <div className="absolute inset-x-0.5 top-1 h-8 opacity-30">
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} className="w-full h-px bg-gray-500 mb-1" />
+                ))}
+              </div>
+            </div>
+            
+            {/* Driver Head - Large rounded shape */}
+            <div 
+              className="absolute -bottom-2 left-1/2 -translate-x-1/2 origin-top"
+              style={{ transform: 'translateX(-50%) rotate(45deg)' }}
+            >
+              {/* Main head body - rounded driver shape */}
+              <div className="relative w-10 h-7 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900 rounded-[50%] shadow-lg">
+                {/* Head shine/highlight */}
+                <div className="absolute top-1 left-1 w-4 h-2 bg-gradient-to-br from-white/20 to-transparent rounded-full" />
+                {/* Face of the club */}
+                <div className="absolute top-1/2 right-0 -translate-y-1/2 w-1.5 h-5 bg-gradient-to-r from-gray-600 to-gray-500 rounded-r-sm" />
+              </div>
+            </div>
           </div>
 
           {/* Impact effect */}
           {isSwinging && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
-              <div className="w-8 h-8 rounded-full bg-primary/30 animate-ping" />
+            <div className="absolute bottom-6 left-1/2 translate-x-1">
+              <div className="w-10 h-10 rounded-full bg-primary/40 animate-ping" />
             </div>
           )}
         </div>
