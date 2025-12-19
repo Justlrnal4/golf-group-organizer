@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Flag, CalendarIcon, MapPin, Clock, User, ArrowRight, Loader2 } from "lucide-react";
+import { Flag, CalendarIcon, MapPin, Clock, User, ArrowRight, Loader2, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,6 @@ const Index = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
     if (!dateRange?.from || !dateRange?.to) {
       toast.error("Please select a date range");
       return;
@@ -52,7 +51,6 @@ const Index = () => {
     setIsSubmitting(true);
 
     try {
-      // Create deadline with time
       const deadlineDateTime = new Date(
         deadline.getFullYear(),
         deadline.getMonth(),
@@ -61,7 +59,6 @@ const Index = () => {
         parseInt(deadlineTime.split(":")[1])
       );
 
-      // Insert outing
       const { data: outing, error: outingError } = await supabase
         .from("outings")
         .insert({
@@ -77,7 +74,6 @@ const Index = () => {
 
       if (outingError) throw outingError;
 
-      // Insert organizer as participant
       const { data: participant, error: participantError } = await supabase
         .from("participants")
         .insert({
@@ -90,7 +86,6 @@ const Index = () => {
 
       if (participantError) throw participantError;
 
-      // Store participant ID for voting
       localStorage.setItem(`participant_${outing.id}`, participant.id);
 
       toast.success("Outing created!");
@@ -106,12 +101,13 @@ const Index = () => {
   return (
     <PageContainer>
       {/* Header */}
-      <div className="flex items-center justify-center pt-4 pb-6 animate-fade-in">
-        <Link to="/" className="flex items-center gap-2 btn-press">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-hero shadow-soft">
-            <Flag className="h-5 w-5 text-primary-foreground" />
+      <div className="flex items-center justify-center pt-2 pb-8 animate-fade-in">
+        <Link to="/" className="group flex items-center gap-3 btn-press">
+          <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl gradient-hero shadow-elevated">
+            <Flag className="h-6 w-6 text-primary-foreground" />
+            <div className="absolute inset-0 rounded-2xl bg-primary/20 blur-xl opacity-60" />
           </div>
-          <span className="font-display text-xl font-semibold text-foreground">
+          <span className="font-display text-2xl font-bold text-foreground tracking-tight">
             CrewSync Golf
           </span>
         </Link>
@@ -119,20 +115,24 @@ const Index = () => {
 
       {/* Form Card */}
       <form onSubmit={handleSubmit} className="animate-slide-up">
-        <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-soft">
-          <div className="text-center mb-6">
-            <h1 className="font-display text-2xl font-bold text-card-foreground">
+        <div className="glass-card p-6 sm:p-8">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/80 text-accent-foreground text-xs font-semibold mb-4">
+              <Sparkles className="h-3.5 w-3.5" />
+              New Outing
+            </div>
+            <h1 className="font-display text-3xl font-bold text-card-foreground tracking-tight">
               Create an Outing
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-2 text-muted-foreground">
               Set up your golf outing and invite friends
             </p>
           </div>
 
-          <div className="space-y-5">
+          <div className="space-y-6">
             {/* Outing Title */}
             <div className="space-y-2">
-              <Label htmlFor="title" className="text-sm font-medium">
+              <Label htmlFor="title" className="text-sm font-semibold">
                 Outing Title
               </Label>
               <Input
@@ -141,14 +141,14 @@ const Index = () => {
                 placeholder="Saturday Golf"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="h-12"
+                className="h-13"
                 disabled={isSubmitting}
               />
             </div>
 
             {/* Date Range */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium">
+              <Label className="text-sm font-semibold">
                 Possible Dates
               </Label>
               <p className="text-xs text-muted-foreground">
@@ -159,17 +159,17 @@ const Index = () => {
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full h-12 justify-start text-left font-normal btn-press",
+                      "w-full h-13 justify-start text-left font-normal",
                       !dateRange && "text-muted-foreground"
                     )}
                     disabled={isSubmitting}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    <CalendarIcon className="mr-3 h-4 w-4 text-primary" />
                     {dateRange?.from ? (
                       dateRange.to ? (
-                        <>
+                        <span className="font-medium">
                           {format(dateRange.from, "MMM d")} - {format(dateRange.to, "MMM d, yyyy")}
-                        </>
+                        </span>
                       ) : (
                         format(dateRange.from, "MMM d, yyyy")
                       )
@@ -178,7 +178,7 @@ const Index = () => {
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 glass-card" align="start">
                   <Calendar
                     mode="range"
                     selected={dateRange}
@@ -193,21 +193,21 @@ const Index = () => {
 
             {/* Zip Code */}
             <div className="space-y-2">
-              <Label htmlFor="zipCode" className="text-sm font-medium">
+              <Label htmlFor="zipCode" className="text-sm font-semibold">
                 Your Zip Code
               </Label>
               <p className="text-xs text-muted-foreground">
                 We'll find courses near this location
               </p>
               <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <MapPin className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
                 <Input
                   id="zipCode"
                   type="text"
                   placeholder="12345"
                   value={zipCode}
                   onChange={(e) => setZipCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
-                  className="h-12 pl-10"
+                  className="h-13 pl-11"
                   maxLength={5}
                   disabled={isSubmitting}
                 />
@@ -216,28 +216,32 @@ const Index = () => {
 
             {/* Response Deadline */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium">
+              <Label className="text-sm font-semibold">
                 Response Deadline
               </Label>
               <p className="text-xs text-muted-foreground">
                 When do friends need to respond by?
               </p>
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className={cn(
-                        "flex-1 h-12 justify-start text-left font-normal btn-press",
+                        "flex-1 h-13 justify-start text-left font-normal",
                         !deadline && "text-muted-foreground"
                       )}
                       disabled={isSubmitting}
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {deadline ? format(deadline, "MMM d, yyyy") : <span>Select date</span>}
+                      <CalendarIcon className="mr-3 h-4 w-4 text-primary" />
+                      {deadline ? (
+                        <span className="font-medium">{format(deadline, "MMM d, yyyy")}</span>
+                      ) : (
+                        <span>Select date</span>
+                      )}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent className="w-auto p-0 glass-card" align="start">
                     <Calendar
                       mode="single"
                       selected={deadline}
@@ -248,12 +252,12 @@ const Index = () => {
                   </PopoverContent>
                 </Popover>
                 <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Clock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
                   <Input
                     type="time"
                     value={deadlineTime}
                     onChange={(e) => setDeadlineTime(e.target.value)}
-                    className="h-12 pl-10 w-[110px] sm:w-[120px]"
+                    className="h-13 pl-11 w-[120px] sm:w-[130px]"
                     disabled={isSubmitting}
                   />
                 </div>
@@ -262,18 +266,18 @@ const Index = () => {
 
             {/* Organizer Name */}
             <div className="space-y-2">
-              <Label htmlFor="organizerName" className="text-sm font-medium">
+              <Label htmlFor="organizerName" className="text-sm font-semibold">
                 Your Name
               </Label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <User className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
                 <Input
                   id="organizerName"
                   type="text"
                   placeholder="Enter your name"
                   value={organizerName}
                   onChange={(e) => setOrganizerName(e.target.value)}
-                  className="h-12 pl-10"
+                  className="h-13 pl-11"
                   disabled={isSubmitting}
                 />
               </div>
@@ -285,7 +289,7 @@ const Index = () => {
             type="submit" 
             variant="hero" 
             size="lg" 
-            className="w-full mt-8 btn-press"
+            className="w-full mt-10"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
@@ -304,10 +308,10 @@ const Index = () => {
       </form>
 
       {/* Footer Link */}
-      <div className="mt-6 text-center animate-fade-in" style={{ animationDelay: "0.2s" }}>
+      <div className="mt-8 text-center animate-fade-in" style={{ animationDelay: "0.3s" }}>
         <p className="text-sm text-muted-foreground">
           Have an invite link?{" "}
-          <Link to="/join/demo" className="font-medium text-primary hover:underline">
+          <Link to="/join/demo" className="font-semibold text-primary hover:text-primary/80 transition-colors">
             Join an outing
           </Link>
         </p>

@@ -9,31 +9,31 @@ interface HeaderProps {
 
 export function Header({ showBack, backTo = "/", title }: HeaderProps) {
   return (
-    <header className="mb-6 flex items-center justify-between">
+    <header className="mb-8 flex items-center justify-between">
       {showBack ? (
         <Link
           to={backTo}
-          className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground btn-press"
+          className="group flex items-center gap-1.5 text-sm font-semibold text-muted-foreground transition-all duration-200 hover:text-foreground btn-press"
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
           Back
         </Link>
       ) : (
-        <Link to="/" className="flex items-center gap-2 btn-press">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-hero shadow-soft">
-            <Flag className="h-4 w-4 text-primary-foreground" />
+        <Link to="/" className="group flex items-center gap-3 btn-press">
+          <div className="relative flex h-11 w-11 items-center justify-center rounded-2xl gradient-hero shadow-elevated glow-pulse">
+            <Flag className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="font-display text-lg font-semibold text-foreground">
+          <span className="font-display text-xl font-bold text-foreground tracking-tight">
             CrewSync Golf
           </span>
         </Link>
       )}
       {title && (
-        <h1 className="font-display text-lg font-semibold text-foreground">
+        <h1 className="font-display text-lg font-bold text-foreground tracking-tight">
           {title}
         </h1>
       )}
-      <div className="w-16" /> {/* Spacer for centering */}
+      <div className="w-16" />
     </header>
   );
 }
