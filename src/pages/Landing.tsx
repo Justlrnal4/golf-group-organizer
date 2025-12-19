@@ -56,7 +56,7 @@ const Landing = () => {
         
         {/* Value proposition */}
         <p className="text-lg text-muted-foreground mb-4 max-w-md mx-auto leading-relaxed">
-          Share your preferences, see what lines up best, and let <span className="font-semibold text-foreground">CrewSync</span> handle the rest.
+          Share your availability, see what lines up best with your crew, and let <span className="font-semibold text-foreground">CrewSync</span> handle the rest.
         </p>
         
         <p className="text-base text-muted-foreground mb-12 max-w-sm mx-auto">
