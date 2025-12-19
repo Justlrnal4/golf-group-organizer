@@ -39,26 +39,35 @@ const Landing = () => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 text-center max-w-md animate-fade-in">
+      <div className="relative z-10 text-center max-w-lg animate-fade-in">
         {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-8">
+        <div className="flex items-center justify-center gap-3 mb-10">
           <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl gradient-hero shadow-elevated">
             <Flag className="h-7 w-7 text-primary-foreground" />
             <div className="absolute inset-0 rounded-2xl bg-primary/20 blur-xl opacity-60" />
           </div>
-          <span className="font-display text-3xl font-bold text-foreground tracking-tight">
-            CrewSync Golf
-          </span>
+          <div className="flex items-baseline gap-1">
+            <span className="font-display text-3xl font-bold text-foreground tracking-tight">
+              CrewSync
+            </span>
+            <span className="font-display text-3xl font-bold text-primary tracking-tight">
+              Golf
+            </span>
+          </div>
         </div>
 
-        {/* Tagline */}
-        <h1 className="font-display text-4xl sm:text-5xl font-bold text-foreground tracking-tight leading-tight mb-4">
-          Golf plans,{" "}
-          <span className="text-gradient">sorted.</span>
+        {/* Headline */}
+        <h1 className="font-display text-3xl sm:text-4xl font-bold text-foreground tracking-tight leading-snug mb-6">
+          No time to coordinate golf with the crew?
         </h1>
         
-        <p className="text-lg text-muted-foreground mb-12 max-w-sm mx-auto">
-          Find the perfect tee time for your crew. Everyone votes, AI picks the best course.
+        {/* Value proposition */}
+        <p className="text-lg text-muted-foreground mb-4 max-w-md mx-auto leading-relaxed">
+          Share your preferences, see what lines up best with your crew, and let <span className="font-semibold text-foreground">CrewSync</span> take care of the rest.
+        </p>
+        
+        <p className="text-base text-muted-foreground mb-12 max-w-sm mx-auto">
+          All you have to do is <span className="font-semibold text-primary">show up</span> and catch up. ⛳
         </p>
 
         {/* Golf Animation Area */}
