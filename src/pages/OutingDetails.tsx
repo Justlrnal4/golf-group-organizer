@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Copy, Users, Calendar, MapPin, Share2, Loader2, Clock, DollarSign, Car, Target, Sparkles, RefreshCw, ExternalLink } from "lucide-react";
+import { Copy, Users, Calendar, Share2, Loader2, Clock, DollarSign, Car, Target, Sparkles, RefreshCw, ExternalLink, ClipboardList } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Header } from "@/components/layout/Header";
+import { OutingDetailsSkeleton } from "@/components/LoadingSkeleton";
+import { ErrorState } from "@/components/ErrorState";
+import { EmptyState } from "@/components/EmptyState";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { computeOverlapWindows, formatWindowDisplay, type OverlapResult, type Participant, type Preference } from "@/lib/overlap";
@@ -51,8 +54,6 @@ const OutingDetails = () => {
   useEffect(() => {
     if (planCards.length === 0) return;
 
-    const planCardIds = planCards.map(p => p.id);
-    
     const channel = supabase
       .channel('votes-changes')
       .on(
@@ -62,8 +63,7 @@ const OutingDetails = () => {
           schema: 'public',
           table: 'votes',
         },
-        (payload) => {
-          console.log('Vote change:', payload);
+        () => {
           fetchVotes();
         }
       )
@@ -232,25 +232,35 @@ const OutingDetails = () => {
     toast.success("Vote link copied!");
   };
 
+  const handleRetry = () => {
+    setError(null);
+    setIsLoading(true);
+    fetchData();
+  };
+
   if (isLoading) {
     return (
       <PageContainer>
-        <div className="flex min-h-[60vh] items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <Header showBack title="Outing Details" />
+        <OutingDetailsSkeleton />
       </PageContainer>
     );
   }
 
-  if (error || !outing) {
+  if (error) {
     return (
       <PageContainer>
-        <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-          <p className="text-lg font-medium text-foreground">{error || "Outing not found"}</p>
-          <Link to="/" className="mt-4 text-sm text-primary hover:underline">
-            Create a new outing
-          </Link>
-        </div>
+        <Header showBack title="Outing Details" />
+        <ErrorState message={error} onRetry={handleRetry} />
+      </PageContainer>
+    );
+  }
+
+  if (!outing) {
+    return (
+      <PageContainer>
+        <Header showBack title="Outing Details" />
+        <ErrorState message="Outing not found" />
       </PageContainer>
     );
   }
@@ -267,6 +277,8 @@ const OutingDetails = () => {
   const respondedCount = preferences.length;
   const topWindows = overlapResult?.windows.slice(0, 5) || [];
   const hasPlans = planCards.length > 0;
+  const hasParticipants = participants.length > 0;
+  const hasResponses = preferences.length > 0;
 
   return (
     <PageContainer>
@@ -293,14 +305,14 @@ const OutingDetails = () => {
           <div className="flex-1 truncate text-sm text-muted-foreground">
             {window.location.origin}/join/{id}
           </div>
-          <Button variant="ghost" size="icon" onClick={handleCopyLink}>
+          <Button variant="ghost" size="icon" onClick={handleCopyLink} className="btn-press shrink-0">
             <Copy className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="mt-4 grid grid-cols-3 gap-3 animate-slide-up" style={{ animationDelay: "0.05s" }}>
+      <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3 animate-slide-up" style={{ animationDelay: "0.05s" }}>
         <StatCard 
           icon={<Users className="h-4 w-4" />} 
           value={participants.length.toString()} 
@@ -330,7 +342,7 @@ const OutingDetails = () => {
                 variant="ghost" 
                 size="sm" 
                 onClick={handleCopyVoteLink}
-                className="text-xs"
+                className="text-xs btn-press"
               >
                 <ExternalLink className="h-3 w-3 mr-1" />
                 Share Vote Link
@@ -340,7 +352,7 @@ const OutingDetails = () => {
                 size="sm" 
                 onClick={handleGeneratePlans}
                 disabled={isGenerating}
-                className="text-xs"
+                className="text-xs btn-press"
               >
                 <RefreshCw className={cn("h-3 w-3 mr-1", isGenerating && "animate-spin")} />
                 Regenerate
@@ -348,19 +360,38 @@ const OutingDetails = () => {
             </div>
           </div>
           <div className="space-y-4">
-            {planCards.map((plan) => {
+            {planCards.map((plan, index) => {
               const { up, down, userVote } = getVoteCounts(plan.id);
               return (
-                <PlanCard
+                <div 
                   key={plan.id}
-                  plan={plan}
-                  upVotes={up}
-                  downVotes={down}
-                  userVote={userVote}
-                  onVote={handleVote}
-                />
+                  className="animate-slide-up"
+                  style={{ animationDelay: `${0.15 + index * 0.05}s` }}
+                >
+                  <PlanCard
+                    plan={plan}
+                    upVotes={up}
+                    downVotes={down}
+                    userVote={userVote}
+                    onVote={handleVote}
+                  />
+                </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* No responses empty state */}
+      {!hasResponses && hasParticipants && !hasPlans && (
+        <div className="mt-4 animate-slide-up" style={{ animationDelay: "0.1s" }}>
+          <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-6">
+            <EmptyState
+              icon={ClipboardList}
+              title="No responses yet"
+              description="Participants have joined but haven't submitted their preferences yet."
+              className="py-6"
+            />
           </div>
         </div>
       )}
@@ -445,12 +476,12 @@ const OutingDetails = () => {
             Participants
           </h2>
           {participants.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border bg-muted/50 p-6 text-center">
-              <Users className="mx-auto h-6 w-6 text-muted-foreground" />
-              <p className="mt-2 text-sm text-muted-foreground">
-                No one has joined yet
-              </p>
-            </div>
+            <EmptyState
+              icon={Users}
+              title="No one has joined yet"
+              description="Share the invite link to get your friends to join."
+              className="py-6"
+            />
           ) : (
             <div className="space-y-2">
               {participants.map((participant) => {
@@ -497,7 +528,7 @@ const OutingDetails = () => {
           <Button 
             variant="hero" 
             size="lg" 
-            className="w-full" 
+            className="w-full btn-press" 
             onClick={handleGeneratePlans}
             disabled={isGenerating}
           >
@@ -514,7 +545,7 @@ const OutingDetails = () => {
             )}
           </Button>
         )}
-        <Button variant="outline" size="lg" className="w-full" onClick={handleCopyLink}>
+        <Button variant="outline" size="lg" className="w-full btn-press" onClick={handleCopyLink}>
           <Share2 className="h-5 w-5" />
           Share Invite Link
         </Button>

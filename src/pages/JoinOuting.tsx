@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Flag, User, Loader2, CheckCircle2, Car, DollarSign, Target } from "lucide-react";
-import { format, eachDayOfInterval, parseISO } from "date-fns";
+import { format, eachDayOfInterval, parseISO, isBefore } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageContainer } from "@/components/layout/PageContainer";
+import { JoinOutingSkeleton } from "@/components/LoadingSkeleton";
+import { ErrorState } from "@/components/ErrorState";
+import { AlreadyResponded } from "@/components/AlreadyResponded";
+import { OutingClosed } from "@/components/OutingClosed";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +24,13 @@ interface Outing {
   date_range_end: string;
   deadline: string;
   status: string;
+}
+
+interface StoredPreferences {
+  name: string;
+  budget: string;
+  maxDriveMinutes: number;
+  holesPreference: string;
 }
 
 const driveTimeOptions = [
@@ -55,6 +66,7 @@ const JoinOuting = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [alreadyResponded, setAlreadyResponded] = useState<StoredPreferences | null>(null);
 
   // Form state
   const [name, setName] = useState("");
@@ -68,6 +80,19 @@ const JoinOuting = () => {
       if (!id) return;
 
       try {
+        // Check if user already responded
+        const participantId = localStorage.getItem(`participant_${id}`);
+        const storedPrefs = localStorage.getItem(`preferences_${id}`);
+        
+        if (participantId && storedPrefs) {
+          try {
+            const prefs = JSON.parse(storedPrefs) as StoredPreferences;
+            setAlreadyResponded(prefs);
+          } catch {
+            // Invalid stored data, continue with normal flow
+          }
+        }
+
         const { data, error } = await supabase
           .from("outings")
           .select("*")
@@ -143,8 +168,14 @@ const JoinOuting = () => {
 
       if (preferencesError) throw preferencesError;
 
-      // Store participant ID for voting
+      // Store participant ID and preferences for future visits
       localStorage.setItem(`participant_${outing.id}`, participant.id);
+      localStorage.setItem(`preferences_${outing.id}`, JSON.stringify({
+        name: name.trim(),
+        budget,
+        maxDriveMinutes,
+        holesPreference,
+      }));
 
       setIsSuccess(true);
     } catch (err) {
@@ -155,6 +186,12 @@ const JoinOuting = () => {
     }
   };
 
+  const handleRetry = () => {
+    setError(null);
+    setIsLoading(true);
+    window.location.reload();
+  };
+
   const setDayAvailability = (date: string, slot: TimeSlot) => {
     setAvailability((prev) => ({ ...prev, [date]: slot }));
   };
@@ -163,25 +200,37 @@ const JoinOuting = () => {
   if (isLoading) {
     return (
       <PageContainer>
-        <div className="flex min-h-[60vh] items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <JoinOutingSkeleton />
       </PageContainer>
     );
   }
 
   // Error state
-  if (error || !outing) {
+  if (error) {
     return (
       <PageContainer>
-        <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-          <p className="text-lg font-medium text-foreground">{error || "Outing not found"}</p>
-          <Link to="/" className="mt-4 text-sm text-primary hover:underline">
-            Create your own outing
-          </Link>
-        </div>
+        <ErrorState message={error} onRetry={handleRetry} />
       </PageContainer>
     );
+  }
+
+  if (!outing) {
+    return (
+      <PageContainer>
+        <ErrorState message="Outing not found" />
+      </PageContainer>
+    );
+  }
+
+  // Check if deadline has passed
+  const deadlinePassed = isBefore(parseISO(outing.deadline), new Date());
+  if (deadlinePassed) {
+    return <OutingClosed outingTitle={outing.title} deadline={outing.deadline} outingId={outing.id} />;
+  }
+
+  // Already responded state
+  if (alreadyResponded) {
+    return <AlreadyResponded outingId={outing.id} preferences={alreadyResponded} />;
   }
 
   // Success state
@@ -194,11 +243,18 @@ const JoinOuting = () => {
           </div>
           <h1 className="font-display text-3xl font-bold text-foreground">You're in!</h1>
           <p className="mt-3 text-muted-foreground max-w-xs">
-            We'll text you when the plan is locked in.
+            We'll notify you when the plan is locked in.
           </p>
-          <Link to="/" className="mt-8">
-            <Button variant="outline">Create your own outing</Button>
-          </Link>
+          <div className="mt-8 flex flex-col gap-3 w-full max-w-sm">
+            <Link to={`/vote/${outing.id}`} className="w-full">
+              <Button variant="hero" size="lg" className="w-full btn-press">
+                Vote on Plans
+              </Button>
+            </Link>
+            <Link to="/" className="w-full">
+              <Button variant="outline" className="btn-press">Create your own outing</Button>
+            </Link>
+          </div>
         </div>
       </PageContainer>
     );
@@ -213,12 +269,12 @@ const JoinOuting = () => {
     <PageContainer>
       {/* Logo */}
       <div className="flex items-center justify-center pt-4 pb-4 animate-fade-in">
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2 btn-press">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-hero shadow-soft">
             <Flag className="h-4 w-4 text-primary-foreground" />
           </div>
           <span className="font-display text-lg font-semibold text-foreground">
-            CrewSync
+            CrewSync Golf
           </span>
         </Link>
       </div>
@@ -239,7 +295,7 @@ const JoinOuting = () => {
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-4 animate-slide-up">
+      <form onSubmit={handleSubmit} className="space-y-4 animate-slide-up" style={{ animationDelay: "0.1s" }}>
         {/* Name Input */}
         <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
           <Label htmlFor="name" className="text-sm font-medium flex items-center gap-2">
@@ -270,12 +326,12 @@ const JoinOuting = () => {
               const currentSlot = availability[dateKey] || "either";
 
               return (
-                <div key={dateKey} className="flex items-center gap-3">
-                  <div className="w-16 shrink-0">
+                <div key={dateKey} className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-14 sm:w-16 shrink-0">
                     <div className="text-xs text-muted-foreground">{format(day, "EEE")}</div>
                     <div className="font-medium text-sm">{format(day, "MMM d")}</div>
                   </div>
-                  <div className="flex flex-1 gap-1.5">
+                  <div className="flex flex-1 gap-1 sm:gap-1.5">
                     {timeSlotOptions.map((slot) => (
                       <button
                         key={slot.value}
@@ -283,7 +339,7 @@ const JoinOuting = () => {
                         onClick={() => setDayAvailability(dateKey, slot.value)}
                         disabled={isSubmitting}
                         className={cn(
-                          "flex-1 py-2 px-2 rounded-lg text-xs font-medium border transition-all",
+                          "flex-1 py-2 px-1.5 sm:px-2 rounded-lg text-xs font-medium border transition-all btn-press",
                           currentSlot === slot.value
                             ? slot.color + " ring-2 ring-offset-1 ring-primary/30"
                             : "bg-background text-muted-foreground border-border hover:bg-muted"
@@ -313,7 +369,7 @@ const JoinOuting = () => {
                 onClick={() => setMaxDriveMinutes(option.value)}
                 disabled={isSubmitting}
                 className={cn(
-                  "flex-1 py-3 px-3 rounded-xl text-sm font-medium border transition-all",
+                  "flex-1 py-3 px-2 sm:px-3 rounded-xl text-sm font-medium border transition-all btn-press",
                   maxDriveMinutes === option.value
                     ? "bg-primary text-primary-foreground border-primary shadow-soft"
                     : "bg-background text-foreground border-border hover:bg-muted"
@@ -339,7 +395,7 @@ const JoinOuting = () => {
                 onClick={() => setBudget(option.value)}
                 disabled={isSubmitting}
                 className={cn(
-                  "flex-1 py-3 px-3 rounded-xl border transition-all text-center",
+                  "flex-1 py-3 px-2 sm:px-3 rounded-xl border transition-all text-center btn-press",
                   budget === option.value
                     ? "bg-primary text-primary-foreground border-primary shadow-soft"
                     : "bg-background text-foreground border-border hover:bg-muted"
@@ -366,7 +422,7 @@ const JoinOuting = () => {
                 onClick={() => setHolesPreference(option.value)}
                 disabled={isSubmitting}
                 className={cn(
-                  "flex-1 py-3 px-3 rounded-xl text-sm font-medium border transition-all",
+                  "flex-1 py-3 px-2 sm:px-3 rounded-xl text-sm font-medium border transition-all btn-press",
                   holesPreference === option.value
                     ? "bg-primary text-primary-foreground border-primary shadow-soft"
                     : "bg-background text-foreground border-border hover:bg-muted"
@@ -383,7 +439,7 @@ const JoinOuting = () => {
           type="submit"
           variant="hero"
           size="xl"
-          className="w-full"
+          className="w-full btn-press"
           disabled={isSubmitting}
         >
           {isSubmitting ? (

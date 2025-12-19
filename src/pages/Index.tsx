@@ -78,15 +78,20 @@ const Index = () => {
       if (outingError) throw outingError;
 
       // Insert organizer as participant
-      const { error: participantError } = await supabase
+      const { data: participant, error: participantError } = await supabase
         .from("participants")
         .insert({
           outing_id: outing.id,
           name: organizerName.trim(),
           is_organizer: true,
-        });
+        })
+        .select()
+        .single();
 
       if (participantError) throw participantError;
+
+      // Store participant ID for voting
+      localStorage.setItem(`participant_${outing.id}`, participant.id);
 
       toast.success("Outing created!");
       navigate(`/outing/${outing.id}`);
@@ -102,7 +107,7 @@ const Index = () => {
     <PageContainer>
       {/* Header */}
       <div className="flex items-center justify-center pt-4 pb-6 animate-fade-in">
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2 btn-press">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-hero shadow-soft">
             <Flag className="h-5 w-5 text-primary-foreground" />
           </div>
@@ -114,7 +119,7 @@ const Index = () => {
 
       {/* Form Card */}
       <form onSubmit={handleSubmit} className="animate-slide-up">
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-soft">
+        <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-soft">
           <div className="text-center mb-6">
             <h1 className="font-display text-2xl font-bold text-card-foreground">
               Create an Outing
@@ -154,7 +159,7 @@ const Index = () => {
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full h-12 justify-start text-left font-normal",
+                      "w-full h-12 justify-start text-left font-normal btn-press",
                       !dateRange && "text-muted-foreground"
                     )}
                     disabled={isSubmitting}
@@ -223,7 +228,7 @@ const Index = () => {
                     <Button
                       variant="outline"
                       className={cn(
-                        "flex-1 h-12 justify-start text-left font-normal",
+                        "flex-1 h-12 justify-start text-left font-normal btn-press",
                         !deadline && "text-muted-foreground"
                       )}
                       disabled={isSubmitting}
@@ -248,7 +253,7 @@ const Index = () => {
                     type="time"
                     value={deadlineTime}
                     onChange={(e) => setDeadlineTime(e.target.value)}
-                    className="h-12 pl-10 w-[120px]"
+                    className="h-12 pl-10 w-[110px] sm:w-[120px]"
                     disabled={isSubmitting}
                   />
                 </div>
@@ -280,7 +285,7 @@ const Index = () => {
             type="submit" 
             variant="hero" 
             size="lg" 
-            className="w-full mt-8"
+            className="w-full mt-8 btn-press"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
