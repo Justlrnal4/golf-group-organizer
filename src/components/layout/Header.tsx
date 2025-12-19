@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Flag } from "lucide-react";
+import { Flag, ChevronLeft } from "lucide-react";
 
 interface HeaderProps {
   showBack?: boolean;
@@ -13,30 +13,18 @@ export function Header({ showBack, backTo = "/", title }: HeaderProps) {
       {showBack ? (
         <Link
           to={backTo}
-          className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground btn-press"
         >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
+          <ChevronLeft className="h-4 w-4" />
           Back
         </Link>
       ) : (
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2 btn-press">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-hero shadow-soft">
             <Flag className="h-4 w-4 text-primary-foreground" />
           </div>
           <span className="font-display text-lg font-semibold text-foreground">
-            CrewSync
+            CrewSync Golf
           </span>
         </Link>
       )}

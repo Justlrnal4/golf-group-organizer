@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Loader2, Users } from "lucide-react";
+import { Users, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Header } from "@/components/layout/Header";
+import { VotePlansSkeleton } from "@/components/LoadingSkeleton";
+import { ErrorState } from "@/components/ErrorState";
+import { EmptyState } from "@/components/EmptyState";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PlanCard, type PlanCardData } from "@/components/PlanCard";
@@ -148,12 +151,17 @@ const VotePlans = () => {
     };
   };
 
+  const handleRetry = () => {
+    setError(null);
+    setIsLoading(true);
+    fetchData();
+  };
+
   if (isLoading) {
     return (
       <PageContainer>
-        <div className="flex min-h-[60vh] items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <Header showBack backTo={`/outing/${id}`} title="Vote on Plans" />
+        <VotePlansSkeleton />
       </PageContainer>
     );
   }
@@ -161,12 +169,8 @@ const VotePlans = () => {
   if (error) {
     return (
       <PageContainer>
-        <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-          <p className="text-lg font-medium text-foreground">{error}</p>
-          <Link to="/" className="mt-4 text-sm text-primary hover:underline">
-            Create a new outing
-          </Link>
-        </div>
+        <Header showBack backTo={`/outing/${id}`} title="Vote on Plans" />
+        <ErrorState message={error} onRetry={handleRetry} />
       </PageContainer>
     );
   }
@@ -175,20 +179,15 @@ const VotePlans = () => {
     return (
       <PageContainer>
         <Header showBack backTo={`/outing/${id}`} title="Vote on Plans" />
-        <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted mb-4">
-            <Users className="h-8 w-8 text-muted-foreground" />
-          </div>
-          <h2 className="font-display text-lg font-semibold text-foreground">
-            No plans yet
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground max-w-xs">
-            The organizer hasn't generated any plan options yet. Check back soon!
-          </p>
-          <Link to={`/outing/${id}`} className="mt-6">
-            <Button variant="outline">View Outing Details</Button>
-          </Link>
-        </div>
+        <EmptyState
+          icon={ClipboardList}
+          title="No plans generated yet"
+          description="The organizer hasn't generated any plan options yet. Check back soon!"
+          action={{
+            label: "View Outing Details",
+            onClick: () => window.location.href = `/outing/${id}`,
+          }}
+        />
       </PageContainer>
     );
   }
@@ -205,10 +204,10 @@ const VotePlans = () => {
       </div>
 
       {!participantId && (
-        <div className="animate-fade-in rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4">
+        <div className="animate-fade-in rounded-xl border border-primary/20 bg-primary/5 p-4 mb-4" style={{ animationDelay: "0.05s" }}>
           <p className="text-sm text-foreground">
             <strong>Want to vote?</strong>{" "}
-            <Link to={`/join/${id}`} className="text-primary underline">
+            <Link to={`/join/${id}`} className="text-primary underline font-medium">
               Join the outing first
             </Link>
           </p>
@@ -217,17 +216,22 @@ const VotePlans = () => {
 
       {/* Plan Cards */}
       <div className="space-y-4">
-        {planCards.map((plan) => {
+        {planCards.map((plan, index) => {
           const { up, down, userVote } = getVoteCounts(plan.id);
           return (
-            <PlanCard
-              key={plan.id}
-              plan={plan}
-              upVotes={up}
-              downVotes={down}
-              userVote={userVote}
-              onVote={handleVote}
-            />
+            <div 
+              key={plan.id} 
+              className="animate-slide-up" 
+              style={{ animationDelay: `${0.1 + index * 0.05}s` }}
+            >
+              <PlanCard
+                plan={plan}
+                upVotes={up}
+                downVotes={down}
+                userVote={userVote}
+                onVote={handleVote}
+              />
+            </div>
           );
         })}
       </div>

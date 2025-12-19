@@ -49,7 +49,7 @@ export function PlanCard({ plan, upVotes, downVotes, userVote, onVote, isVoting 
   };
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-soft transition-all hover:shadow-md">
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-soft transition-all hover:shadow-elevated">
       {/* Header with fit score */}
       <div className="flex items-start justify-between">
         <div className="flex-1">
@@ -109,7 +109,7 @@ export function PlanCard({ plan, upVotes, downVotes, userVote, onVote, isVoting 
         <Button
           variant={userVote === "up" ? "default" : "outline"}
           size="sm"
-          className="flex-1 gap-2"
+          className="flex-1 gap-2 btn-press"
           onClick={() => handleVote("up")}
           disabled={!!localVoting || isVoting}
         >
@@ -125,7 +125,7 @@ export function PlanCard({ plan, upVotes, downVotes, userVote, onVote, isVoting 
         <Button
           variant={userVote === "down" ? "destructive" : "outline"}
           size="sm"
-          className="flex-1 gap-2"
+          className="flex-1 gap-2 btn-press"
           onClick={() => handleVote("down")}
           disabled={!!localVoting || isVoting}
         >
