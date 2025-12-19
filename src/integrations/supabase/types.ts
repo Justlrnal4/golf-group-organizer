@@ -94,6 +94,7 @@ export type Database = {
           is_organizer: boolean
           name: string
           outing_id: string
+          phone: string | null
         }
         Insert: {
           available_dates?: string[] | null
@@ -102,6 +103,7 @@ export type Database = {
           is_organizer?: boolean
           name: string
           outing_id: string
+          phone?: string | null
         }
         Update: {
           available_dates?: string[] | null
@@ -110,6 +112,7 @@ export type Database = {
           is_organizer?: boolean
           name?: string
           outing_id?: string
+          phone?: string | null
         }
         Relationships: [
           {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Flag, User, Loader2, CheckCircle2, Car, DollarSign, Target, Sparkles } from "lucide-react";
+import { Flag, User, Loader2, CheckCircle2, Car, DollarSign, Target, Sparkles, Phone } from "lucide-react";
 import { format, eachDayOfInterval, parseISO, isBefore } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,7 @@ interface Outing {
 
 interface StoredPreferences {
   name: string;
+  phone?: string;
   budget: string;
   maxDriveMinutes: number;
   holesPreference: string;
@@ -69,6 +70,7 @@ const JoinOuting = () => {
   const [alreadyResponded, setAlreadyResponded] = useState<StoredPreferences | null>(null);
 
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [availability, setAvailability] = useState<Availability>({});
   const [maxDriveMinutes, setMaxDriveMinutes] = useState(30);
   const [budget, setBudget] = useState("$$");
@@ -143,6 +145,7 @@ const JoinOuting = () => {
         .insert({
           outing_id: outing.id,
           name: name.trim(),
+          phone: phone.trim() || null,
           is_organizer: false,
         })
         .select()
@@ -166,6 +169,7 @@ const JoinOuting = () => {
       localStorage.setItem(`participant_${outing.id}`, participant.id);
       localStorage.setItem(`preferences_${outing.id}`, JSON.stringify({
         name: name.trim(),
+        phone: phone.trim() || undefined,
         budget,
         maxDriveMinutes,
         holesPreference,
@@ -289,21 +293,42 @@ const JoinOuting = () => {
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-5 animate-slide-up" style={{ animationDelay: "0.1s" }}>
-        {/* Name Input */}
-        <div className="glass-card p-6">
-          <Label htmlFor="name" className="text-sm font-semibold flex items-center gap-2">
-            <User className="h-4 w-4 text-primary" />
-            Your Name
-          </Label>
-          <Input
-            id="name"
-            type="text"
-            placeholder="Enter your name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="mt-3"
-            disabled={isSubmitting}
-          />
+        {/* Name & Phone Input */}
+        <div className="glass-card p-6 space-y-5">
+          <div>
+            <Label htmlFor="name" className="text-sm font-semibold flex items-center gap-2">
+              <User className="h-4 w-4 text-primary" />
+              Your Name
+            </Label>
+            <Input
+              id="name"
+              type="text"
+              placeholder="Enter your name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="mt-3"
+              disabled={isSubmitting}
+            />
+          </div>
+          <div>
+            <Label htmlFor="phone" className="text-sm font-semibold flex items-center gap-2">
+              <Phone className="h-4 w-4 text-primary" />
+              Phone Number
+              <span className="text-xs font-normal text-muted-foreground">(optional)</span>
+            </Label>
+            <Input
+              id="phone"
+              type="tel"
+              placeholder="(555) 123-4567"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="mt-3"
+              disabled={isSubmitting}
+            />
+            <p className="text-xs text-muted-foreground mt-2">
+              Share with your crew for easier coordination
+            </p>
+          </div>
         </div>
 
         {/* Availability */}
