@@ -51,7 +51,7 @@ const Landing = () => {
 
         {/* Headline */}
         <h1 className="font-display text-3xl sm:text-4xl font-bold text-foreground tracking-tight leading-snug mb-6">
-          No time to coordinate golf with the crew?
+          No time to coordinate your tee times?
         </h1>
         
         {/* Value proposition */}
