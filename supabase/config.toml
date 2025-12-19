@@ -1,1 +1,4 @@
 project_id = "hstznyaylojabweywavk"
+
+[functions.generate-plans]
+verify_jwt = false

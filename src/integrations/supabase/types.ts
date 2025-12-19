@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      courses: {
+        Row: {
+          address: string
+          created_at: string
+          holes_available: string
+          id: string
+          name: string
+          phone: string | null
+          price_tier: string
+          website: string | null
+          zip_code: string
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          holes_available?: string
+          id?: string
+          name: string
+          phone?: string | null
+          price_tier?: string
+          website?: string | null
+          zip_code: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          holes_available?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          price_tier?: string
+          website?: string | null
+          zip_code?: string
+        }
+        Relationships: []
+      }
       outings: {
         Row: {
           created_at: string
@@ -85,6 +121,59 @@ export type Database = {
           },
         ]
       }
+      plan_cards: {
+        Row: {
+          course_address: string
+          course_name: string
+          created_at: string
+          drive_time: string
+          estimated_cost: string
+          fit_score: number
+          id: string
+          outing_id: string
+          rationale: string[]
+          time_window_end: string
+          time_window_start: string
+          title: string
+        }
+        Insert: {
+          course_address: string
+          course_name: string
+          created_at?: string
+          drive_time: string
+          estimated_cost: string
+          fit_score?: number
+          id?: string
+          outing_id: string
+          rationale?: string[]
+          time_window_end: string
+          time_window_start: string
+          title: string
+        }
+        Update: {
+          course_address?: string
+          course_name?: string
+          created_at?: string
+          drive_time?: string
+          estimated_cost?: string
+          fit_score?: number
+          id?: string
+          outing_id?: string
+          rationale?: string[]
+          time_window_end?: string
+          time_window_start?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_cards_outing_id_fkey"
+            columns: ["outing_id"]
+            isOneToOne: false
+            referencedRelation: "outings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       preferences: {
         Row: {
           availability: Json
@@ -132,6 +221,45 @@ export type Database = {
             columns: ["participant_id"]
             isOneToOne: true
             referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      votes: {
+        Row: {
+          created_at: string
+          id: string
+          participant_id: string
+          plan_card_id: string
+          vote: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          participant_id: string
+          plan_card_id: string
+          vote: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          participant_id?: string
+          plan_card_id?: string
+          vote?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "votes_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "votes_plan_card_id_fkey"
+            columns: ["plan_card_id"]
+            isOneToOne: false
+            referencedRelation: "plan_cards"
             referencedColumns: ["id"]
           },
         ]
