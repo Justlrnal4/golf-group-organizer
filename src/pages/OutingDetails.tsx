@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Copy, Users, Calendar, MapPin, Share2, Loader2, Clock, DollarSign, Car, Target, Sparkles } from "lucide-react";
+import { Copy, Users, Calendar, MapPin, Share2, Loader2, Clock, DollarSign, Car, Target, Sparkles, RefreshCw, ExternalLink } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -8,6 +8,7 @@ import { Header } from "@/components/layout/Header";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { computeOverlapWindows, formatWindowDisplay, type OverlapResult, type Participant, type Preference } from "@/lib/overlap";
+import { PlanCard, type PlanCardData } from "@/components/PlanCard";
 import { cn } from "@/lib/utils";
 
 interface Outing {
@@ -20,85 +21,215 @@ interface Outing {
   status: string;
 }
 
+interface Vote {
+  id: string;
+  plan_card_id: string;
+  participant_id: string;
+  vote: "up" | "down";
+}
+
 const OutingDetails = () => {
   const { id } = useParams();
   const [outing, setOuting] = useState<Outing | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [preferences, setPreferences] = useState<Preference[]>([]);
   const [overlapResult, setOverlapResult] = useState<OverlapResult | null>(null);
+  const [planCards, setPlanCards] = useState<PlanCardData[]>([]);
+  const [votes, setVotes] = useState<Vote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Get participant ID from localStorage (set during join)
+  const participantId = localStorage.getItem(`participant_${id}`);
+
   useEffect(() => {
-    const fetchData = async () => {
-      if (!id) return;
-
-      try {
-        // Fetch outing
-        const { data: outingData, error: outingError } = await supabase
-          .from("outings")
-          .select("*")
-          .eq("id", id)
-          .maybeSingle();
-
-        if (outingError) throw outingError;
-        if (!outingData) {
-          setError("Outing not found");
-          return;
-        }
-        setOuting(outingData);
-
-        // Fetch participants
-        const { data: participantsData, error: participantsError } = await supabase
-          .from("participants")
-          .select("*")
-          .eq("outing_id", id);
-
-        if (participantsError) throw participantsError;
-        setParticipants(participantsData || []);
-
-        // Fetch preferences
-        const { data: preferencesData, error: preferencesError } = await supabase
-          .from("preferences")
-          .select("*")
-          .eq("outing_id", id);
-
-        if (preferencesError) throw preferencesError;
-        
-        // Type assertion for preferences since availability is JSONB
-        const typedPreferences: Preference[] = (preferencesData || []).map((p) => ({
-          participant_id: p.participant_id,
-          availability: (p.availability as Record<string, "morning" | "afternoon" | "either" | "cant">) || {},
-          max_drive_minutes: p.max_drive_minutes,
-          budget: p.budget,
-          holes_preference: p.holes_preference,
-        }));
-        setPreferences(typedPreferences);
-
-        // Compute overlaps
-        if (outingData && participantsData && participantsData.length > 0) {
-          const result = computeOverlapWindows(
-            outingData.date_range_start,
-            outingData.date_range_end,
-            participantsData,
-            typedPreferences
-          );
-          setOverlapResult(result);
-        }
-      } catch (err) {
-        console.error("Error fetching data:", err);
-        setError("Failed to load outing");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchData();
   }, [id]);
 
+  // Subscribe to real-time vote updates
+  useEffect(() => {
+    if (planCards.length === 0) return;
+
+    const planCardIds = planCards.map(p => p.id);
+    
+    const channel = supabase
+      .channel('votes-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'votes',
+        },
+        (payload) => {
+          console.log('Vote change:', payload);
+          fetchVotes();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [planCards]);
+
+  const fetchData = async () => {
+    if (!id) return;
+
+    try {
+      // Fetch outing
+      const { data: outingData, error: outingError } = await supabase
+        .from("outings")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+
+      if (outingError) throw outingError;
+      if (!outingData) {
+        setError("Outing not found");
+        return;
+      }
+      setOuting(outingData);
+
+      // Fetch participants
+      const { data: participantsData, error: participantsError } = await supabase
+        .from("participants")
+        .select("*")
+        .eq("outing_id", id);
+
+      if (participantsError) throw participantsError;
+      setParticipants(participantsData || []);
+
+      // Fetch preferences
+      const { data: preferencesData, error: preferencesError } = await supabase
+        .from("preferences")
+        .select("*")
+        .eq("outing_id", id);
+
+      if (preferencesError) throw preferencesError;
+      
+      const typedPreferences: Preference[] = (preferencesData || []).map((p) => ({
+        participant_id: p.participant_id,
+        availability: (p.availability as Record<string, "morning" | "afternoon" | "either" | "cant">) || {},
+        max_drive_minutes: p.max_drive_minutes,
+        budget: p.budget,
+        holes_preference: p.holes_preference,
+      }));
+      setPreferences(typedPreferences);
+
+      // Compute overlaps
+      if (outingData && participantsData && participantsData.length > 0) {
+        const result = computeOverlapWindows(
+          outingData.date_range_start,
+          outingData.date_range_end,
+          participantsData,
+          typedPreferences
+        );
+        setOverlapResult(result);
+      }
+
+      // Fetch existing plan cards
+      const { data: planCardsData, error: planCardsError } = await supabase
+        .from("plan_cards")
+        .select("*")
+        .eq("outing_id", id)
+        .order("fit_score", { ascending: false });
+
+      if (planCardsError) throw planCardsError;
+      setPlanCards(planCardsData || []);
+
+      // Fetch votes if we have plan cards
+      if (planCardsData && planCardsData.length > 0) {
+        await fetchVotes();
+      }
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError("Failed to load outing");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchVotes = async () => {
+    const { data: votesData, error: votesError } = await supabase
+      .from("votes")
+      .select("*");
+
+    if (!votesError && votesData) {
+      setVotes(votesData as Vote[]);
+    }
+  };
+
+  const handleGeneratePlans = async () => {
+    if (!id) return;
+    
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-plans", {
+        body: { outing_id: id },
+      });
+
+      if (error) {
+        console.error("Error generating plans:", error);
+        toast.error("Failed to generate plans");
+        return;
+      }
+
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      if (data?.plans) {
+        setPlanCards(data.plans);
+        toast.success("Plans generated!");
+        await fetchVotes();
+      }
+    } catch (err) {
+      console.error("Error:", err);
+      toast.error("Something went wrong");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleVote = async (planId: string, vote: "up" | "down") => {
+    if (!participantId) {
+      toast.error("Please join the outing first to vote");
+      return;
+    }
+
+    try {
+      // Upsert vote
+      const { error } = await supabase
+        .from("votes")
+        .upsert(
+          {
+            plan_card_id: planId,
+            participant_id: participantId,
+            vote,
+          },
+          { onConflict: "plan_card_id,participant_id" }
+        );
+
+      if (error) throw error;
+      toast.success("Voted!");
+      await fetchVotes();
+    } catch (err) {
+      console.error("Error voting:", err);
+      toast.error("Failed to save vote");
+    }
+  };
+
   const handleCopyLink = () => {
     navigator.clipboard.writeText(`${window.location.origin}/join/${id}`);
-    toast.success("Link copied to clipboard!");
+    toast.success("Link copied!");
+  };
+
+  const handleCopyVoteLink = () => {
+    navigator.clipboard.writeText(`${window.location.origin}/vote/${id}`);
+    toast.success("Vote link copied!");
   };
 
   if (isLoading) {
@@ -124,9 +255,18 @@ const OutingDetails = () => {
     );
   }
 
-  const organizer = participants.find((p) => p.is_organizer);
+  const getVoteCounts = (planId: string) => {
+    const planVotes = votes.filter(v => v.plan_card_id === planId);
+    return {
+      up: planVotes.filter(v => v.vote === "up").length,
+      down: planVotes.filter(v => v.vote === "down").length,
+      userVote: planVotes.find(v => v.participant_id === participantId)?.vote || null,
+    };
+  };
+
   const respondedCount = preferences.length;
   const topWindows = overlapResult?.windows.slice(0, 5) || [];
+  const hasPlans = planCards.length > 0;
 
   return (
     <PageContainer>
@@ -178,8 +318,55 @@ const OutingDetails = () => {
         />
       </div>
 
+      {/* Plan Cards Section */}
+      {hasPlans && (
+        <div className="mt-4 animate-slide-up" style={{ animationDelay: "0.1s" }}>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-display text-sm font-semibold text-foreground">
+              Plan Options
+            </h2>
+            <div className="flex gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleCopyVoteLink}
+                className="text-xs"
+              >
+                <ExternalLink className="h-3 w-3 mr-1" />
+                Share Vote Link
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleGeneratePlans}
+                disabled={isGenerating}
+                className="text-xs"
+              >
+                <RefreshCw className={cn("h-3 w-3 mr-1", isGenerating && "animate-spin")} />
+                Regenerate
+              </Button>
+            </div>
+          </div>
+          <div className="space-y-4">
+            {planCards.map((plan) => {
+              const { up, down, userVote } = getVoteCounts(plan.id);
+              return (
+                <PlanCard
+                  key={plan.id}
+                  plan={plan}
+                  upVotes={up}
+                  downVotes={down}
+                  userVote={userVote}
+                  onVote={handleVote}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Constraint Summary */}
-      {overlapResult && preferences.length > 0 && (
+      {overlapResult && preferences.length > 0 && !hasPlans && (
         <div className="mt-4 animate-slide-up" style={{ animationDelay: "0.1s" }}>
           <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
             <h2 className="font-display text-sm font-semibold text-card-foreground mb-3">
@@ -205,7 +392,7 @@ const OutingDetails = () => {
       )}
 
       {/* Best Times */}
-      {topWindows.length > 0 && (
+      {topWindows.length > 0 && !hasPlans && (
         <div className="mt-4 animate-slide-up" style={{ animationDelay: "0.15s" }}>
           <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
             <h2 className="font-display text-sm font-semibold text-card-foreground mb-3">
@@ -306,12 +493,25 @@ const OutingDetails = () => {
 
       {/* Actions */}
       <div className="mt-6 space-y-3 animate-slide-up" style={{ animationDelay: "0.25s" }}>
-        {overlapResult?.has_overlap && (
-          <Button variant="hero" size="lg" className="w-full" asChild>
-            <Link to={`/vote/${id}`}>
-              <Sparkles className="h-5 w-5" />
-              Generate Plans
-            </Link>
+        {overlapResult?.has_overlap && !hasPlans && (
+          <Button 
+            variant="hero" 
+            size="lg" 
+            className="w-full" 
+            onClick={handleGeneratePlans}
+            disabled={isGenerating}
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-5 w-5" />
+                Generate Plans
+              </>
+            )}
           </Button>
         )}
         <Button variant="outline" size="lg" className="w-full" onClick={handleCopyLink}>

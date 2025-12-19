@@ -143,6 +143,9 @@ const JoinOuting = () => {
 
       if (preferencesError) throw preferencesError;
 
+      // Store participant ID for voting
+      localStorage.setItem(`participant_${outing.id}`, participant.id);
+
       setIsSuccess(true);
     } catch (err) {
       console.error("Error submitting preferences:", err);
