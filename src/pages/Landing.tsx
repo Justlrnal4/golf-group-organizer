@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import logo from "@/assets/logo.png";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -33,27 +33,20 @@ const Landing = () => {
     <div className="min-h-screen flex flex-col items-center justify-center px-6 overflow-hidden">
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-primary/5 blur-3xl" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 rounded-full bg-primary/8 blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-gradient-radial from-primary/5 to-transparent blur-2xl" />
+        <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-accent/10 blur-3xl" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-gradient-radial from-secondary/5 to-transparent blur-2xl" />
       </div>
 
       {/* Content */}
       <div className="relative z-10 text-center max-w-lg animate-fade-in">
         {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-10">
-          <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl gradient-hero shadow-elevated">
-            <Flag className="h-7 w-7 text-primary-foreground" />
-            <div className="absolute inset-0 rounded-2xl bg-primary/20 blur-xl opacity-60" />
-          </div>
-          <div className="flex items-baseline gap-1">
-            <span className="font-display text-3xl font-bold text-foreground tracking-tight">
-              CrewSync
-            </span>
-            <span className="font-display text-3xl font-bold text-primary tracking-tight">
-              Golf
-            </span>
-          </div>
+        <div className="flex items-center justify-center mb-8">
+          <img 
+            src={logo} 
+            alt="CrewSync Golf - Connect. Coordinate. Play." 
+            className="h-40 w-auto drop-shadow-lg"
+          />
         </div>
 
         {/* Headline */}
